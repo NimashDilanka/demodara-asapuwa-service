@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.url">jdbc:mariadb://localhost:3306/panhinda</property>
+        <property name="connection.driver_class">org.mariadb.jdbc.Driver</property>
+        <mapping class="com.example.demodaraasapuwaservice.entity.DataMatchEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.ImageEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.MemberEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.ProcessBatchEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.ProcessTypeEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.RowDataEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.SystemPropertyEntity"/>
+        <mapping class="com.example.demodaraasapuwaservice.entity.UserEntity"/>
+        <!-- <property name="connection.username"/> -->
+        <!-- <property name="connection.password"/> -->
+
+        <!-- DB schema will be updated if needed -->
+        <!-- <property name="hibernate.hbm2ddl.auto">update</property> -->
+    </session-factory>
+</hibernate-configuration>
