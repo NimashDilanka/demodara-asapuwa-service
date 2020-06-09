@@ -1,16 +1,20 @@
-package com.example.demodaraasapuwaservice.entity;
+package com.example.demodaraasapuwaservice.dao;
 
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.Collection;
-import java.util.Objects;
 
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Data
 @Table(name = "process_type", schema = "panhinda")
 public class ProcessTypeEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private int id;
     @Column(name = "type", nullable = false, length = 200)

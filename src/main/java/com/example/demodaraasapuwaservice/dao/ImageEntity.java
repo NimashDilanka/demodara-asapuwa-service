@@ -1,15 +1,20 @@
-package com.example.demodaraasapuwaservice.entity;
+package com.example.demodaraasapuwaservice.dao;
 
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.Collection;
 
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Data
 @Table(name = "image", schema = "panhinda")
 public class ImageEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private int id;
     @Column(name = "path", nullable = false, length = 200)
