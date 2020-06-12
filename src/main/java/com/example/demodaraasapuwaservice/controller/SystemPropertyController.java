@@ -12,6 +12,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @Api(value = "System Property Management")
 @RequestMapping("/setting-property-management/")
 public class SystemPropertyController {
