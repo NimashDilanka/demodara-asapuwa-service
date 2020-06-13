@@ -66,7 +66,9 @@ public class MemberService {
     public ResponseEntity deleteMember(Integer id) {
         Optional<MemberEntity> byId = memberRepository.findById(id);
         if (!byId.isPresent()) {
-            return ResponseEntity.notFound().build();
+            List<String> errors = new ArrayList<>();
+            errors.add("Delete Request Rejected. Member with id: " + id + " not available on system.");
+            return new ResponseEntity<>(errors, HttpStatus.NOT_FOUND);
         }
         memberRepository.delete(byId.get());
         return ResponseEntity.ok().build();

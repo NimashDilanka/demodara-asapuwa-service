@@ -39,7 +39,4 @@ public class MemberEntity {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_modify_date", nullable = false)
     private Date lastModifyDate;
-    @ManyToOne
-    @JoinColumn(name = "image_id", referencedColumnName = "id")
-    private ImageEntity imageByImageId;
 }
