@@ -16,7 +16,7 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @Column(name = "name", nullable = false, length = 200)
     private String name;
     @OneToMany(mappedBy = "userByUserId")

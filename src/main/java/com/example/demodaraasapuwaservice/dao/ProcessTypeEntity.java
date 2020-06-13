@@ -16,7 +16,7 @@ public class ProcessTypeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @Column(name = "type", nullable = false, length = 200)
     private String type;
     @OneToMany(mappedBy = "processTypeByProcessTypeId")

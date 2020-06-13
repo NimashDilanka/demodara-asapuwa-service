@@ -18,7 +18,7 @@ public class SystemPropertyEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @Column(name = "code", nullable = false, length = 200)
     private String code;
     @Column(name = "value", nullable = false, length = 200)

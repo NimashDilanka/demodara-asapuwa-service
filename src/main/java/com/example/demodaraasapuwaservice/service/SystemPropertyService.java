@@ -5,7 +5,6 @@ import com.example.demodaraasapuwaservice.dto.SystemPropertyDto;
 import com.example.demodaraasapuwaservice.mapper.SystemPropertyMapper;
 import com.example.demodaraasapuwaservice.repository.SystemPropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,7 @@ public class SystemPropertyService {
         for (SystemPropertyDto property : resource) {
             Optional<SystemPropertyEntity> byId = systemPropertyRepository.findById(property.getId());
             if (!byId.isPresent()) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                return ResponseEntity.notFound().build();
             }
             SystemPropertyEntity modifiedEntity = mapper.modDtoToDao(property, byId.get());
             systemPropertyRepository.save(modifiedEntity);

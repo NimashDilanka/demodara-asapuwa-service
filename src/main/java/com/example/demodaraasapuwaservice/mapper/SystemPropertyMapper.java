@@ -16,9 +16,11 @@ public abstract class SystemPropertyMapper {
 
     @Mapping(target = "lastModifyDate", ignore = true)
     @Mapping(target = "addedDate", ignore = true)
+    @Mapping(target = "id", ignore = true)
     public abstract SystemPropertyEntity mapDtoToDao(SystemPropertyDto systemPropertyDto);
 
     @Mapping(target = "addedDate", ignore = true)
     @Mapping(target = "lastModifyDate", ignore = true)
+    @Mapping(target = "id", ignore = true)
     public abstract SystemPropertyEntity modDtoToDao(SystemPropertyDto systemPropertyDto, @MappingTarget SystemPropertyEntity systemPropertyEntity);
 }

@@ -15,7 +15,7 @@ public class DataMatchEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @ManyToOne
     @JoinColumn(name = "member_id", referencedColumnName = "id", nullable = false)
     private MemberEntity memberByMemberId;

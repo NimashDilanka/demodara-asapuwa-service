@@ -1,6 +1,8 @@
 package com.example.demodaraasapuwaservice.dao;
 
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -16,7 +18,7 @@ public class MemberEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @Column(name = "name", nullable = false, length = 200)
     private String name;
     @Column(name = "amount", nullable = false)
@@ -30,7 +32,11 @@ public class MemberEntity {
     @Column(name = "email", nullable = true, length = 100)
     private String email;
     @Column(name = "added_date", nullable = false)
+    @CreationTimestamp
+    @Temporal(TemporalType.TIMESTAMP)
     private Date addedDate;
+    @UpdateTimestamp
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_modify_date", nullable = false)
     private Date lastModifyDate;
     @ManyToOne

@@ -30,7 +30,7 @@ public class SystemPropertyController {
     }
 
     @ApiOperation(value = "Modify settings", response = ResponseEntity.class)
-    @PostMapping("settings")
+    @PutMapping("settings")
     public ResponseEntity modifySettings(@Valid @RequestBody List<SystemPropertyDto> resource) {
         return systemPropertyService.modifySettings(resource);
     }

@@ -9,11 +9,14 @@ import java.util.Date;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class SystemPropertyDto {
+public class MemberDto {
     private Integer id;
-    private String code;
-    private String value;
-    private boolean enable;
+    private String name;
+    private int amount;
+    private String description;
+    private Date transactionDate;
+    private String tpNo;
+    private String email;
     private Date addedDate;
     private Date lastModifyDate;
 }

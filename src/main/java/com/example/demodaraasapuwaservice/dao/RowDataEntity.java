@@ -17,7 +17,7 @@ public class RowDataEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private int id;
+    private Integer id;
     @Column(name = "txn_date", nullable = true)
     private Date txnDate;
     @Column(name = "description", nullable = true, length = 200)
