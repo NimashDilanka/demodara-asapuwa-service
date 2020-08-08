@@ -24,10 +24,20 @@ public class MemberService {
         this.mapper = mapper;
     }
 
-    public ResponseEntity<List<MemberDto>> getMembers() {
-        List<MemberEntity> memberEntityList = memberRepository.findAll();
+    public ResponseEntity<List<MemberDto>> getMembers(String name) {
+        List<MemberEntity> memberEntityList = new ArrayList<>();
+        if (name != null) {
+            Optional<MemberEntity> byName = memberRepository.findByName(name);
+            if (byName.isPresent()) {
+                memberEntityList.add(byName.get());
+            }
+        } else {
+            memberEntityList.addAll(memberRepository.findAll());
+        }
         if (memberEntityList.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            List<String> errors = new ArrayList<>();
+            errors.add("No members for matching criteria: " + (name != null ? "name=" + name : ""));
+            return new ResponseEntity(errors, HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(mapper.mapLDaoToLDto(memberEntityList));
     }
