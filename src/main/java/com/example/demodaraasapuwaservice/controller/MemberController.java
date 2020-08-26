@@ -12,7 +12,6 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
 @Api(value = "Member Management")
 @RequestMapping("/member-management/")
 public class MemberController {
@@ -37,13 +36,13 @@ public class MemberController {
 
     @ApiOperation(value = "Modify member", response = ResponseEntity.class)
     @PutMapping("members/{id}")
-    public ResponseEntity modifyMember(@Valid @RequestBody MemberDto resource, @PathVariable Integer id) {
+    public ResponseEntity<Integer> modifyMember(@Valid @RequestBody MemberDto resource, @PathVariable Integer id) {
         return memberService.modifyMember(id, resource);
     }
 
     @ApiOperation(value = "Add member", response = ResponseEntity.class)
     @PostMapping("members")
-    public ResponseEntity addMember(@Valid @RequestBody MemberDto resource) {
+    public ResponseEntity<Integer> addMember(@Valid @RequestBody MemberDto resource) {
         return memberService.addMember(resource);
     }
 

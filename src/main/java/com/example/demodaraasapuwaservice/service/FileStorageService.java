@@ -2,6 +2,9 @@ package com.example.demodaraasapuwaservice.service;
 
 import com.example.demodaraasapuwaservice.config.FileStorageProperties;
 import com.example.demodaraasapuwaservice.dto.UploadFileResponse;
+import com.example.demodaraasapuwaservice.file.BankRecord;
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,21 +46,25 @@ public class FileStorageService {
         }
     }
 
-    public ResponseEntity<UploadFileResponse> storeFile(MultipartFile file) {
+    public ResponseEntity<UploadFileResponse> storeCsvFile(MultipartFile file) {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename()); // Normalize file name
+        if (!fileName.endsWith(".csv")) {
+            List<String> errors = new ArrayList<>();
+            errors.add("Uploaded file is not a CSV file" + fileName);
+            return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+        }
+
         try {
             // Check if the file's name contains invalid characters
             if (fileName.contains("..")) {
                 List<String> errors = new ArrayList<>();
-                errors.add("Filename contains invalid charactors" + fileName);
+                errors.add("Filename contains invalid characters" + fileName);
                 return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
             }
 
             Path targetLocation = this.fileStorageLocation.resolve(fileName); // Copy file to the target location
             if (Files.exists(targetLocation)) {
-                List<String> errors = new ArrayList<>();
-                errors.add("File with same name already exists in system: " + (fileName != null ? "filename=" + fileName : "" + "uploading file is rejected"));
-                return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+                return getErrorResponse("File with same name already exists in system: ", fileName + "uploading file is rejected", HttpStatus.BAD_REQUEST);
             }
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
@@ -71,9 +80,7 @@ public class FileStorageService {
             logger.error("File Details: ");
             logger.error(file.toString());
 
-            List<String> errors = new ArrayList<>();
-            errors.add("Uploading file failed in backend: " + (fileName != null ? "filename=" + fileName : ""));
-            return new ResponseEntity(errors, HttpStatus.INTERNAL_SERVER_ERROR);
+            return getErrorResponse("Uploading file failed in backend: ", fileName, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -84,15 +91,11 @@ public class FileStorageService {
         try {
             resource = new UrlResource(filePath.toUri());
         } catch (MalformedURLException e) {
-            List<String> errors = new ArrayList<>();
-            errors.add("URL Malformed. File is not found in system: " + (fileName != null ? "filename=" + fileName : ""));
-            return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+            return getErrorResponse("URL Malformed. File is not found in system: ", fileName, HttpStatus.BAD_REQUEST);
         }
 
         if (resource == null || !resource.exists()) {
-            List<String> errors = new ArrayList<>();
-            errors.add("File is not found in system: " + (fileName != null ? "filename=" + fileName : ""));
-            return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+            return getErrorResponse("File is not found in system: ", fileName, HttpStatus.BAD_REQUEST);
         }
 
         String contentType = null; // Try to determine file's content type
@@ -110,6 +113,67 @@ public class FileStorageService {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
+
+    public ResponseEntity<List<BankRecord>> previewFile(MultipartFile file) {
+        List<BankRecord> bankRecords;
+        try {
+            bankRecords = extractData(file.getInputStream());
+            if (bankRecords == null) {
+                return getErrorResponse("Reading uploaded file failed: ", file.getOriginalFilename(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            logger.error("extracting input stream from the multipart file is failed", ex);
+            return getErrorResponse("Reading uploaded file failed: ", file.getOriginalFilename(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return ResponseEntity.ok(bankRecords);
+    }
+
+    private ResponseEntity getErrorResponse(String errorDescription, String originalFilename, HttpStatus internalServerError) {
+        List<String> errors = new ArrayList<>();
+        errors.add(errorDescription + (originalFilename != null ? "filename=" + originalFilename : ""));
+        return new ResponseEntity(errors, internalServerError);
+    }
+
+//    public ResponseEntity<UploadFileResponse> uploadFile(MultipartFile file) {
+//        ResponseEntity<UploadFileResponse> response = storeCsvFile(file);
+//        if (response.getStatusCode() != HttpStatus.OK) {
+//            return response; // error occurred
+//        }
+//
+//        response = extractData(file, response);
+//        if (response.getStatusCode() != HttpStatus.OK) {
+//            return response; // error occurred
+//        }
+//        return response;
+//    }
+
+    private List<BankRecord> extractData(InputStream inputStream) {
+        CsvToBean<BankRecord> csvToBean = new CsvToBeanBuilder<BankRecord>(new InputStreamReader(inputStream))
+                .withSeparator(',')
+                .withType(BankRecord.class)
+                .withIgnoreLeadingWhiteSpace(true)
+                .withIgnoreEmptyLine(true)
+                .withFilter(strings -> {
+                    return strings != null && strings.length != 0
+                            && !strings[0].trim().isEmpty() // remove if TxnDate is empty
+                            && !strings[3].trim().isEmpty() // remove if CR is empty
+                            && !strings[1].trim().isEmpty(); // remove if Description is empty
+                })
+                .withVerifier(bankRecord -> bankRecord.getTxnDate() != null &&
+                        bankRecord.getDescription() != null &&
+                        bankRecord.getCr() != 0)
+                .build();
+        try {
+            return csvToBean.parse();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            logger.error("Parsing File into beans failed", e);
+            return null;
+        }
+    }
+
 }
 
 

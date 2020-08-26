@@ -50,27 +50,27 @@ public class MemberService {
         return ResponseEntity.ok(mapper.mapDaoToDto(byId.get()));
     }
 
-    public ResponseEntity modifyMember(Integer id, MemberDto resource) {
+    public ResponseEntity<Integer> modifyMember(Integer id, MemberDto resource) {
         Optional<MemberEntity> byId = memberRepository.findById(id);
         if (!byId.isPresent()) {
             return ResponseEntity.notFound().build();
         }
         MemberEntity memberEntity = mapper.modDtoToDao(resource, byId.get());
-        memberRepository.save(memberEntity);
-        return ResponseEntity.ok().build();
+        MemberEntity savedEntity = memberRepository.save(memberEntity);
+        return ResponseEntity.ok(savedEntity.getId());
     }
 
-    public ResponseEntity addMember(MemberDto resource) {
+    public ResponseEntity<Integer> addMember(MemberDto resource) {
         //is there already a member with same name?
         if (memberRepository.findByName(resource.getName()).isPresent()) {
             List<String> errors = new ArrayList<>();
             errors.add("Adding Request Rejected. Member with name: " + resource.getName() + " already available on system.");
-            return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
         }
 
         MemberEntity memberEntity = mapper.mapDtoToDao(resource);
-        memberRepository.save(memberEntity);
-        return ResponseEntity.ok().build();
+        MemberEntity savedEntity = memberRepository.save(memberEntity);
+        return ResponseEntity.ok(savedEntity.getId());
     }
 
     public ResponseEntity deleteMember(Integer id) {
