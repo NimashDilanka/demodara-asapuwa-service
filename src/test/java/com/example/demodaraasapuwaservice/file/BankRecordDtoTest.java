@@ -1,5 +1,6 @@
 package com.example.demodaraasapuwaservice.file;
 
+import com.example.demodaraasapuwaservice.dto.BankRecordDto;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.CsvToBeanFilter;
@@ -14,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @RunWith(SpringRunner.class)
-public class BankRecordTest {
+public class BankRecordDtoTest {
 
     @Test
     public void testCsv() throws IOException, URISyntaxException {
@@ -22,9 +23,9 @@ public class BankRecordTest {
         Reader reader = Files.newBufferedReader(Paths.get(
                 getClass().getClassLoader().getSystemResource("SampleInput_2_original.csv").toURI()));
         // create csv bean reader
-        CsvToBean<BankRecord> csvToBean = new CsvToBeanBuilder<BankRecord>(reader)
+        CsvToBean<BankRecordDto> csvToBean = new CsvToBeanBuilder<BankRecordDto>(reader)
                 .withSeparator(',')
-                .withType(BankRecord.class)
+                .withType(BankRecordDto.class)
                 .withIgnoreLeadingWhiteSpace(true)
                 .withIgnoreEmptyLine(true)
                 .withFilter(new CsvToBeanFilter() {
@@ -39,7 +40,7 @@ public class BankRecordTest {
                 .build();
 
         // iterate through users
-        for (BankRecord tran : csvToBean) {
+        for (BankRecordDto tran : csvToBean) {
             System.out.println("Txn Date: " + tran.getTxnDate());
             System.out.println("Desc: " + tran.getDescription());
             System.out.println("CR: " + tran.getCr());

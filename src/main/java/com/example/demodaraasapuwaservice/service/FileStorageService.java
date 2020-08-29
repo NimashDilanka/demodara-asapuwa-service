@@ -1,8 +1,12 @@
 package com.example.demodaraasapuwaservice.service;
 
 import com.example.demodaraasapuwaservice.config.FileStorageProperties;
+import com.example.demodaraasapuwaservice.dao.SystemPropertyEntity;
+import com.example.demodaraasapuwaservice.dto.BankRecordDto;
+import com.example.demodaraasapuwaservice.dto.MatchDegree;
+import com.example.demodaraasapuwaservice.dto.MemberDto;
 import com.example.demodaraasapuwaservice.dto.UploadFileResponse;
-import com.example.demodaraasapuwaservice.file.BankRecord;
+import com.example.demodaraasapuwaservice.repository.SystemPropertyRepository;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import org.slf4j.Logger;
@@ -28,16 +32,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 public class FileStorageService {
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
     private final Path fileStorageLocation;
+    private final SystemPropertyRepository systemPropertyRepository;
 
     @Autowired
-    public FileStorageService(FileStorageProperties fileStorageProperties) {
+    public FileStorageService(FileStorageProperties fileStorageProperties, SystemPropertyRepository systemPropertyRepository) {
+        this.systemPropertyRepository = systemPropertyRepository;
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir()).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -64,7 +72,7 @@ public class FileStorageService {
 
             Path targetLocation = this.fileStorageLocation.resolve(fileName); // Copy file to the target location
             if (Files.exists(targetLocation)) {
-                return getErrorResponse("File with same name already exists in system: ", fileName + "uploading file is rejected", HttpStatus.BAD_REQUEST);
+                return getErrorResponse("File with same name already exists in system: ", fileName + " uploading file is rejected", HttpStatus.BAD_REQUEST);
             }
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
@@ -114,20 +122,38 @@ public class FileStorageService {
                 .body(resource);
     }
 
-    public ResponseEntity<List<BankRecord>> previewFile(MultipartFile file) {
-        List<BankRecord> bankRecords;
+    public ResponseEntity<List<BankRecordDto>> previewFile(MultipartFile file) {
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename()); // Normalize file name
+        if (!fileName.endsWith(".csv")) {
+            List<String> errors = new ArrayList<>();
+            errors.add("Uploaded file is not a CSV file" + fileName);
+            return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+        }
+
+        List<BankRecordDto> bankRecordDtos;
         try {
-            bankRecords = extractData(file.getInputStream());
-            if (bankRecords == null) {
+            // Check if the file's name contains invalid characters
+            if (fileName.contains("..")) {
+                List<String> errors = new ArrayList<>();
+                errors.add("Filename contains invalid characters" + fileName);
+                return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
+            }
+
+//            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+//            if (Files.exists(targetLocation)) {
+//                return getErrorResponse("File with same name already exists in system: ", fileName + " uploading file is rejected", HttpStatus.BAD_REQUEST);
+//            }
+            bankRecordDtos = extractData(file.getInputStream());
+            if (bankRecordDtos == null) {
                 return getErrorResponse("Reading uploaded file failed: ", file.getOriginalFilename(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (IOException ex) {
             ex.printStackTrace();
-            logger.error("extracting input stream from the multipart file is failed", ex);
+            logger.error("Extracting input stream from the multipart file is failed", ex);
             return getErrorResponse("Reading uploaded file failed: ", file.getOriginalFilename(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return ResponseEntity.ok(bankRecords);
+        return ResponseEntity.ok(bankRecordDtos);
     }
 
     private ResponseEntity getErrorResponse(String errorDescription, String originalFilename, HttpStatus internalServerError) {
@@ -149,10 +175,10 @@ public class FileStorageService {
 //        return response;
 //    }
 
-    private List<BankRecord> extractData(InputStream inputStream) {
-        CsvToBean<BankRecord> csvToBean = new CsvToBeanBuilder<BankRecord>(new InputStreamReader(inputStream))
+    private List<BankRecordDto> extractData(InputStream inputStream) {
+        CsvToBean<BankRecordDto> csvToBean = new CsvToBeanBuilder<BankRecordDto>(new InputStreamReader(inputStream))
                 .withSeparator(',')
-                .withType(BankRecord.class)
+                .withType(BankRecordDto.class)
                 .withIgnoreLeadingWhiteSpace(true)
                 .withIgnoreEmptyLine(true)
                 .withFilter(strings -> {
@@ -161,9 +187,9 @@ public class FileStorageService {
                             && !strings[3].trim().isEmpty() // remove if CR is empty
                             && !strings[1].trim().isEmpty(); // remove if Description is empty
                 })
-                .withVerifier(bankRecord -> bankRecord.getTxnDate() != null &&
-                        bankRecord.getDescription() != null &&
-                        bankRecord.getCr() != 0)
+                .withVerifier(bankRecordDto -> bankRecordDto.getTxnDate() != null &&
+                        bankRecordDto.getDescription() != null &&
+                        bankRecordDto.getCr() != 0)
                 .build();
         try {
             return csvToBean.parse();
@@ -174,6 +200,68 @@ public class FileStorageService {
         }
     }
 
+    public ResponseEntity<List<BankRecordDto>> matchTransactions(List<BankRecordDto> records, List<MemberDto> members) {
+        ArrayList<BankRecordDto> matchedRecords = new ArrayList<>();
+
+        //just match looking at description
+        Iterator<BankRecordDto> perfrctItr = records.iterator();
+        while (perfrctItr.hasNext()) {
+            BankRecordDto record = perfrctItr.next();
+            Optional<MemberDto> matchedMember = members.stream().filter(m -> m.getDescription().trim().equalsIgnoreCase(record.getDescription())).findFirst();
+            if (matchedMember.isPresent()) {
+                record.setMemberId(matchedMember.get().getId());
+                record.setMatchDegree(MatchDegree.PERFECT);
+                matchedRecords.add(record);
+                perfrctItr.remove();
+            }
+        }
+
+        //try to match using date and amount
+        Optional<SystemPropertyEntity> tolerance = systemPropertyRepository.getByCode(SystemPropertyService.TRANS_DATE_TOLERANCE);
+        int tolaranceRange = tolerance.isPresent() ? Integer.parseInt(tolerance.get().getValue()) : 0;
+        Iterator<BankRecordDto> doubtItr = records.iterator();
+        while (doubtItr.hasNext()) {
+            BankRecordDto record = doubtItr.next();
+            Optional<MemberDto> matchedMember = members.stream().filter(m -> memberMatched(record, m, tolaranceRange)).findFirst();
+            if (matchedMember.isPresent()) {
+                record.setMemberId(matchedMember.get().getId());
+                record.setMatchDegree(MatchDegree.DOUBTFUL);
+                matchedRecords.add(record);
+                doubtItr.remove();
+            }
+        }
+
+        //update no matching entries
+        records.forEach(r -> {
+            r.setMemberId(0);
+            r.setMatchDegree(MatchDegree.NO_MATCH);
+            matchedRecords.add(r);
+        });
+
+        return ResponseEntity.ok(matchedRecords);
+    }
+
+    private boolean memberMatched(BankRecordDto record, MemberDto m, int tolaranceRange) {
+        boolean amountMatched = m.getAmount().equals(record.getCr());
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+        try {
+            Date scheduledDateWithoutTime = df.parse(df.format(m.getTransactionDate()));
+            Date txnDateWithoutTime = df.parse(df.format(record.getTxnDate()));
+            Calendar c = Calendar.getInstance();
+            c.setTime(scheduledDateWithoutTime);
+            c.add(Calendar.DATE, tolaranceRange);
+            Date expiryDate = c.getTime();
+            boolean dateEquals = scheduledDateWithoutTime.equals(txnDateWithoutTime);
+            boolean withinExpiryRange = txnDateWithoutTime.after(scheduledDateWithoutTime) && txnDateWithoutTime.before(expiryDate);
+
+            return amountMatched && (dateEquals || withinExpiryRange);
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
 }
 
 

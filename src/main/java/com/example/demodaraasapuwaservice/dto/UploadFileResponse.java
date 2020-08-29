@@ -1,6 +1,5 @@
 package com.example.demodaraasapuwaservice.dto;
 
-import com.example.demodaraasapuwaservice.file.BankRecord;
 import lombok.*;
 
 import java.util.List;
@@ -16,7 +15,7 @@ public class UploadFileResponse {
     private String fileType;
     private long size;
     private String caption;
-    private List<BankRecord> bankRecordList;
+    private List<BankRecordDto> bankRecordDtoList;
 
     public UploadFileResponse(String fileName, String fileDownloadUri, String fileType, long size) {
         this.fileName = fileName;

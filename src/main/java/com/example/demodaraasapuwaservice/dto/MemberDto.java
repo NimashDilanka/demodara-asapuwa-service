@@ -12,7 +12,7 @@ import java.util.Date;
 public class MemberDto {
     private Integer id;
     private String name;
-    private int amount;
+    private Integer amount;
     private String description;
     private Date transactionDate;
     private String tpNo;
