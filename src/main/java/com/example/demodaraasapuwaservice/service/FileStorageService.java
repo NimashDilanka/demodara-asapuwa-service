@@ -32,9 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -207,7 +204,11 @@ public class FileStorageService {
         Iterator<BankRecordDto> perfrctItr = records.iterator();
         while (perfrctItr.hasNext()) {
             BankRecordDto record = perfrctItr.next();
-            Optional<MemberDto> matchedMember = members.stream().filter(m -> m.getDescription().trim().equalsIgnoreCase(record.getDescription())).findFirst();
+            Optional<MemberDto> matchedMember = members.stream()
+                    .filter(m -> m.getDescription().trim().equalsIgnoreCase(record.getDescription()) &&
+                            m.getAmount().equals(record.getCr())
+                    )
+                    .findFirst();
             if (matchedMember.isPresent()) {
                 record.setMemberId(matchedMember.get().getId());
                 record.setMatchDegree(MatchDegree.PERFECT);
@@ -241,26 +242,19 @@ public class FileStorageService {
         return ResponseEntity.ok(matchedRecords);
     }
 
-    private boolean memberMatched(BankRecordDto record, MemberDto m, int tolaranceRange) {
+    private boolean memberMatched(BankRecordDto record, MemberDto m, int toleranceRange) {
         boolean amountMatched = m.getAmount().equals(record.getCr());
-        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-        try {
-            Date scheduledDateWithoutTime = df.parse(df.format(m.getTransactionDate()));
-            Date txnDateWithoutTime = df.parse(df.format(record.getTxnDate()));
-            Calendar c = Calendar.getInstance();
-            c.setTime(scheduledDateWithoutTime);
-            c.add(Calendar.DATE, tolaranceRange);
-            Date expiryDate = c.getTime();
-            boolean dateEquals = scheduledDateWithoutTime.equals(txnDateWithoutTime);
-            boolean withinExpiryRange = txnDateWithoutTime.after(scheduledDateWithoutTime) && txnDateWithoutTime.before(expiryDate);
+        Calendar c = Calendar.getInstance();
+        c.setTime(m.getTransactionDate());
+        int scheduledDate = c.get(Calendar.DAY_OF_MONTH);
 
-            return amountMatched && (dateEquals || withinExpiryRange);
+        c.setTime(record.getTxnDate());
+        int transactionDate = c.get(Calendar.DAY_OF_MONTH);
 
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return false;
-        }
+        int expiryDate = scheduledDate + toleranceRange > 31 ? 31 : scheduledDate + toleranceRange;
 
+        boolean withinExpiryRange = transactionDate >= scheduledDate && transactionDate <= expiryDate;
+        return amountMatched && withinExpiryRange;
     }
 }
 
