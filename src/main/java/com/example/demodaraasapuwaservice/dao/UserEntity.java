@@ -3,7 +3,7 @@ package com.example.demodaraasapuwaservice.dao;
 import lombok.*;
 
 import javax.persistence.*;
-import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,5 +20,5 @@ public class UserEntity {
     @Column(name = "name", nullable = false, length = 200)
     private String name;
     @OneToMany(mappedBy = "userByUserId")
-    private Collection<ProcessBatchEntity> processBatchesById;
+    private List<ProcessBatchEntity> processBatchesById;
 }

@@ -24,10 +24,10 @@ public class MemberService {
         this.mapper = mapper;
     }
 
-    public ResponseEntity<List<MemberDto>> getMembers(String name) {
+    public ResponseEntity<List<MemberDto>> getMembers(String preferredName) {
         List<MemberEntity> memberEntityList = new ArrayList<>();
-        if (name != null) {
-            Optional<MemberEntity> byName = memberRepository.findByName(name);
+        if (preferredName != null) {
+            Optional<MemberEntity> byName = memberRepository.findByPreferredName(preferredName);
             if (byName.isPresent()) {
                 memberEntityList.add(byName.get());
             }
@@ -36,7 +36,7 @@ public class MemberService {
         }
         if (memberEntityList.isEmpty()) {
             List<String> errors = new ArrayList<>();
-            errors.add("No members for matching criteria: " + (name != null ? "name=" + name : ""));
+            errors.add("No members for matching criteria: " + (preferredName != null ? "preffered name=" + preferredName : ""));
             return new ResponseEntity(errors, HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(mapper.mapLDaoToLDto(memberEntityList));
@@ -62,9 +62,9 @@ public class MemberService {
 
     public ResponseEntity<Integer> addMember(MemberDto resource) {
         //is there already a member with same name?
-        if (memberRepository.findByName(resource.getName()).isPresent()) {
+        if (memberRepository.findByPreferredName(resource.getFullName()).isPresent()) {
             List<String> errors = new ArrayList<>();
-            errors.add("Adding Request Rejected. Member with name: " + resource.getName() + " already available on system.");
+            errors.add("Adding Request Rejected. Member with name: " + resource.getFullName() + " already available on system.");
             return new ResponseEntity(errors, HttpStatus.BAD_REQUEST);
         }
 

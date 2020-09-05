@@ -24,8 +24,8 @@ public class MemberController {
 
     @ApiOperation(value = "Retrieve all members", response = ResponseEntity.class)
     @GetMapping("members")
-    public ResponseEntity<List<MemberDto>> getMembers(@RequestParam(required = false, name = "name") String name) {
-        return memberService.getMembers(name);
+    public ResponseEntity<List<MemberDto>> getMembers(@RequestParam(required = false, name = "preferredName") String preferredName) {
+        return memberService.getMembers(preferredName);
     }
 
     @ApiOperation(value = "Retrieve member", response = ResponseEntity.class)

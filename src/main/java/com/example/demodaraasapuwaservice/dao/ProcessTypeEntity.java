@@ -3,7 +3,7 @@ package com.example.demodaraasapuwaservice.dao;
 import lombok.*;
 
 import javax.persistence.*;
-import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,5 +20,5 @@ public class ProcessTypeEntity {
     @Column(name = "type", nullable = false, length = 200)
     private String type;
     @OneToMany(mappedBy = "processTypeByProcessTypeId")
-    private Collection<ProcessBatchEntity> processBatchesById;
+    private List<ProcessBatchEntity> processBatchesById;
 }

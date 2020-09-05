@@ -1,6 +1,8 @@
 package com.example.demodaraasapuwaservice.mapper;
 
+import com.example.demodaraasapuwaservice.dao.AddressEntity;
 import com.example.demodaraasapuwaservice.dao.MemberEntity;
+import com.example.demodaraasapuwaservice.dto.AddressDto;
 import com.example.demodaraasapuwaservice.dto.MemberDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -23,4 +25,18 @@ public abstract class MemberMapper {
     @Mapping(target = "lastModifyDate", ignore = true)
     @Mapping(target = "id", ignore = true)
     public abstract MemberEntity modDtoToDao(MemberDto MemberDto, @MappingTarget MemberEntity MemberEntity);
+
+    public abstract List<AddressDto> mapLDaoAddressToLDtoAddress(List<AddressEntity> addressEntities);
+
+    public abstract AddressDto mapDaoAddressToDtoAddress(AddressEntity addressEntity);
+
+    public abstract List<AddressEntity> mapDtoAddressToDaoAddress(List<AddressDto> addressDto);
+
+    @Mapping(target = "id", ignore = true)
+    public abstract AddressEntity mapDtoAddressToDaoAddress(AddressDto addressDto);
+
+    public abstract List<AddressEntity> modDtoAddressToDaoAddress(List<AddressDto> addressDto, @MappingTarget List<AddressEntity> addressEntity);
+
+    @Mapping(target = "id", ignore = true)
+    public abstract AddressEntity modDtoAddressToDaoAddress(AddressDto addressDto, @MappingTarget AddressEntity addressEntity);
 }

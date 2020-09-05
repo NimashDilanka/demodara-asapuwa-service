@@ -3,8 +3,8 @@ package com.example.demodaraasapuwaservice.dao;
 import lombok.*;
 
 import javax.persistence.*;
-import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,5 +27,5 @@ public class ProcessBatchEntity {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private UserEntity userByUserId;
     @OneToMany(mappedBy = "processBatchByProcessBatchId")
-    private Collection<RowDataEntity> rowDataById;
+    private List<RowDataEntity> rowDataById;
 }
