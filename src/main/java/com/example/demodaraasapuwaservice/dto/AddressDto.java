@@ -11,7 +11,7 @@ import lombok.*;
 public class AddressDto {
     private Integer id;
     private String unitNo;
-    private String Street;
+    private String street;
     private String town;
     private String country;
 }

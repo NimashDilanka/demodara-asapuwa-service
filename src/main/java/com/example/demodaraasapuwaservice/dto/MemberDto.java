@@ -13,6 +13,7 @@ public class MemberDto {
     private Integer id;
     private String preferredName;
     private String fullName;
+    private String nicNo;
     private Integer amount;
     private String description;
     private Date transactionDate;

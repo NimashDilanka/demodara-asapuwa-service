@@ -36,7 +36,7 @@ public class MemberService {
         }
         if (memberEntityList.isEmpty()) {
             List<String> errors = new ArrayList<>();
-            errors.add("No members for matching criteria: " + (preferredName != null ? "preffered name=" + preferredName : ""));
+            errors.add("No members for matching criteria " + (preferredName != null ? "preffered name=" + preferredName : ""));
             return new ResponseEntity(errors, HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(mapper.mapLDaoToLDto(memberEntityList));

@@ -47,7 +47,7 @@ public class MemberEntity {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_modify_date", nullable = false)
     private Date lastModifyDate;
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id", referencedColumnName = "id", nullable = false)
     private AddressEntity address;
 }
