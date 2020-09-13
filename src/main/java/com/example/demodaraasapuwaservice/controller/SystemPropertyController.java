@@ -1,5 +1,6 @@
 package com.example.demodaraasapuwaservice.controller;
 
+import com.example.demodaraasapuwaservice.dto.SettingResponse;
 import com.example.demodaraasapuwaservice.dto.SystemPropertyDto;
 import com.example.demodaraasapuwaservice.service.SystemPropertyService;
 import io.swagger.annotations.Api;
@@ -24,7 +25,7 @@ public class SystemPropertyController {
 
     @ApiOperation(value = "Retrieve all settings", response = ResponseEntity.class)
     @GetMapping("settings")
-    public ResponseEntity<List<SystemPropertyDto>> getSettings() {
+    public ResponseEntity<SettingResponse> getSettings() {
         return systemPropertyService.getSettings();
     }
 
