@@ -33,10 +33,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service
 public class FileStorageService {
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
+    private final String DATE_REGEX = "^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[13-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$";
     private final Path fileStorageLocation;
     private final SystemPropertyRepository systemPropertyRepository;
 
@@ -119,7 +121,7 @@ public class FileStorageService {
                 .body(resource);
     }
 
-    public ResponseEntity<List<BankRecordDto>> previewFile(MultipartFile file) {
+    public ResponseEntity<List<BankRecordDto>> previewFile(MultipartFile file, String month, String year) {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename()); // Normalize file name
         if (!fileName.endsWith(".csv")) {
             List<String> errors = new ArrayList<>();
@@ -140,7 +142,7 @@ public class FileStorageService {
 //            if (Files.exists(targetLocation)) {
 //                return getErrorResponse("File with same name already exists in system: ", fileName + " uploading file is rejected", HttpStatus.BAD_REQUEST);
 //            }
-            bankRecordDtos = extractData(file.getInputStream());
+            bankRecordDtos = extractData(file.getInputStream(), month, year);
             if (bankRecordDtos == null) {
                 return getErrorResponse("Reading uploaded file failed: ", file.getOriginalFilename(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -172,7 +174,7 @@ public class FileStorageService {
 //        return response;
 //    }
 
-    private List<BankRecordDto> extractData(InputStream inputStream) {
+    private List<BankRecordDto> extractData(InputStream inputStream, String month, String year) {
         CsvToBean<BankRecordDto> csvToBean = new CsvToBeanBuilder<BankRecordDto>(new InputStreamReader(inputStream))
                 .withSeparator(',')
                 .withType(BankRecordDto.class)
@@ -181,6 +183,9 @@ public class FileStorageService {
                 .withFilter(strings -> {
                     return strings != null && strings.length != 0
                             && !strings[0].trim().isEmpty() // remove if TxnDate is empty
+                            && Pattern.matches(DATE_REGEX, strings[0].trim()) // TxnDate matches dd/mm/yyyy format
+                            && Integer.parseInt(year) == Integer.parseInt(strings[0].trim().split("/")[2]) // remove if TxnDate year  is unmatched
+                            && Integer.parseInt(month) == Integer.parseInt(strings[0].trim().split("/")[1]) // remove if TxnDate month  is unmatched
                             && !strings[3].trim().isEmpty() // remove if CR is empty
                             && !strings[1].trim().isEmpty(); // remove if Description is empty
                 })

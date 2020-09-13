@@ -19,6 +19,7 @@ public class MemberDto {
     private Date transactionDate;
     private Date dob;
     private Date membershipDate;
+    private String membershipId;
     private String tpNo;
     private String email;
     private Date addedDate;

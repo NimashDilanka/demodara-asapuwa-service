@@ -37,6 +37,8 @@ public class MemberEntity {
     private Date membershipDate;
     @Column(name = "tp_no", nullable = false, length = 100)
     private String tpNo;
+    @Column(name = "membership_id", nullable = true, length = 200)
+    private String membershipId;
     @Column(name = "email", nullable = true, length = 100)
     private String email;
     @Column(name = "added_date", nullable = false)

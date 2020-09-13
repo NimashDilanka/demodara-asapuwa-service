@@ -24,8 +24,8 @@ public class FileController {
 
     @ApiOperation(value = "Preview a file", response = ResponseEntity.class)
     @PostMapping("/preview-files")
-    public ResponseEntity<List<BankRecordDto>> previewCsvFile(@RequestParam(name = "file") MultipartFile file) {
-        return fileStorageService.previewFile(file);
+    public ResponseEntity<List<BankRecordDto>> previewCsvFile(@RequestParam(name = "file") MultipartFile file, @RequestParam(name = "month") String month, @RequestParam(name = "year") String year) {
+        return fileStorageService.previewFile(file, month, year);
     }
 
     @ApiOperation(value = "Match Transactions", response = ResponseEntity.class)
