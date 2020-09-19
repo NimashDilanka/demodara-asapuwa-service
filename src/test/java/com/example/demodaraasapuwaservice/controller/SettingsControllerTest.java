@@ -14,7 +14,7 @@ import static com.example.demodaraasapuwaservice.service.SystemPropertyService.*
 
 @RunWith(SpringRunner.class)
 @WebMvcTest()
-public class SystemPropertyControllerTest {
+public class SettingsControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired

@@ -2,6 +2,7 @@ package com.example.demodaraasapuwaservice.service;
 
 import com.example.demodaraasapuwaservice.dao.PaymentReasonEntity;
 import com.example.demodaraasapuwaservice.dao.SystemPropertyEntity;
+import com.example.demodaraasapuwaservice.dto.PaymentReasonDto;
 import com.example.demodaraasapuwaservice.dto.SettingResponse;
 import com.example.demodaraasapuwaservice.dto.SystemPropertyDto;
 import com.example.demodaraasapuwaservice.mapper.PaymentReasonMapper;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SystemPropertyService {
@@ -44,8 +46,8 @@ public class SystemPropertyService {
         return ResponseEntity.ok(res);
     }
 
-    public ResponseEntity<List<SystemPropertyDto>> modifySettings(List<SystemPropertyDto> resource) {
-        for (SystemPropertyDto property : resource) {
+    public ResponseEntity<SettingResponse> modifySettings(SettingResponse resource) {
+        for (SystemPropertyDto property : resource.getSystemPropertyList()) {
             Optional<SystemPropertyEntity> byId = systemPropertyRepository.findById(property.getId());
             if (!byId.isPresent()) {
                 return ResponseEntity.notFound().build();
@@ -53,6 +55,24 @@ public class SystemPropertyService {
             SystemPropertyEntity modifiedEntity = sysMapper.modDtoToDao(property, byId.get());
             systemPropertyRepository.save(modifiedEntity);
         }
+
+        //remove invalid Payment reasons
+        List<Integer> ids = resource.getPaymentReasonList().stream().map(p -> p.getId()).collect(Collectors.toList());
+        List<PaymentReasonEntity> resons = paymentReasonRepository.findAll();
+        List<Integer> deletingIds = resons.stream().filter(r -> !ids.contains(r.getId())).map(r -> r.getId()).collect(Collectors.toList());
+        deletingIds.forEach(id -> paymentReasonRepository.deleteById(id));
+
+        for (PaymentReasonDto payment : resource.getPaymentReasonList()) {
+            Optional<PaymentReasonEntity> byId1 = paymentReasonRepository.findById(payment.getId());
+            if (byId1.isPresent()) {
+                PaymentReasonEntity modifiedPayment = payMapper.modDtoToDao(payment, byId1.get());
+                paymentReasonRepository.save(modifiedPayment);
+            } else {
+                PaymentReasonEntity newPayment = payMapper.mapDtoToDao(payment);
+                paymentReasonRepository.save(newPayment);
+            }
+        }
+
         return ResponseEntity.ok().build();
     }
 }
