@@ -24,6 +24,11 @@ public class SystemPropertyService {
     public static final String MID_EVAL_EXP_DATE = "MID_EVAL_EXP_DATE";
     public static final String END_EVAL_EXP_DATE = "END_EVAL_EXP_DATE";
     public static final String TRANS_DATE_TOLERANCE = "TRANS_DATE_TOLERANCE";
+    public static final String DEFAULT_DONATION_REASON = "DEFAULT_DONATION_REASON";
+    public static final String ACCOUNT_NAME = "ACCOUNT_NAME";
+    public static final String ACCOUNT_NUMBER = "ACCOUNT_NUMBER";
+    public static final String BANK_NAME = "BANK_NAME";
+    public static final String BANK_BRANCH = "BANK_BRANCH";
     private final SystemPropertyRepository systemPropertyRepository;
     private final PaymentReasonRepository paymentReasonRepository;
     private final SystemPropertyMapper sysMapper;

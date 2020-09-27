@@ -8,15 +8,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
 import static com.example.demodaraasapuwaservice.service.SystemPropertyService.*;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest()
 public class SettingsControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
     @Autowired
     SystemPropertyRepository repo;
     @Autowired
@@ -50,5 +47,14 @@ public class SettingsControllerTest {
         repo.save(mapper.mapDtoToDao(midEvalDate));
         repo.save(mapper.mapDtoToDao(endEvalDate));
         repo.save(mapper.mapDtoToDao(dateTolerance));
+    }
+
+    @Test
+    public void feedData2() {
+        SystemPropertyDto defaultReason = new SystemPropertyDto();
+        defaultReason.setCode(DEFAULT_DONATION_REASON);
+        defaultReason.setValue("Monthly Donation");
+        defaultReason.setEnable(true);
+        repo.save(mapper.mapDtoToDao(defaultReason));
     }
 }

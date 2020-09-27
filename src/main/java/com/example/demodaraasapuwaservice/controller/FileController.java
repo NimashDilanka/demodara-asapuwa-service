@@ -19,8 +19,12 @@ import java.util.List;
 @Api(value = "File Management")
 @RequestMapping("/file-management/")
 public class FileController {
+    private final FileStorageService fileStorageService;
+
     @Autowired
-    private FileStorageService fileStorageService;
+    public FileController(FileStorageService fileStorageService) {
+        this.fileStorageService = fileStorageService;
+    }
 
     @ApiOperation(value = "Preview a file", response = ResponseEntity.class)
     @PostMapping("/preview-files")
