@@ -48,7 +48,7 @@ public class MemberController {
 
     @ApiOperation(value = "Delete member", response = ResponseEntity.class)
     @DeleteMapping("members/{id}")
-    public ResponseEntity addMember(@PathVariable Integer id) {
+    public ResponseEntity deleteMember(@PathVariable Integer id) {
         return memberService.deleteMember(id);
     }
 }

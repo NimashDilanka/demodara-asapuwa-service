@@ -1,14 +1,20 @@
 package com.example.demodaraasapuwaservice.service;
 
 import com.example.demodaraasapuwaservice.config.FileStorageProperties;
+import com.example.demodaraasapuwaservice.dao.MemberEntity;
 import com.example.demodaraasapuwaservice.dao.SystemPropertyEntity;
+import com.example.demodaraasapuwaservice.docprocess.Doc4jProcess;
 import com.example.demodaraasapuwaservice.dto.BankRecordDto;
 import com.example.demodaraasapuwaservice.dto.MatchDegree;
 import com.example.demodaraasapuwaservice.dto.MemberDto;
 import com.example.demodaraasapuwaservice.dto.UploadFileResponse;
+import com.example.demodaraasapuwaservice.repository.MemberRepository;
 import com.example.demodaraasapuwaservice.repository.SystemPropertyRepository;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import org.docx4j.Docx4J;
+import org.docx4j.openpackaging.exceptions.Docx4JException;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,11 +45,13 @@ public class FileStorageService {
     private final String DATE_REGEX = "^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[13-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$";
     private final Path fileStorageLocation;
     private final SystemPropertyRepository systemPropertyRepository;
+    private final MemberRepository memberRepository;
 
     @Autowired
-    public FileStorageService(FileStorageProperties fileStorageProperties, SystemPropertyRepository systemPropertyRepository) {
+    public FileStorageService(FileStorageProperties fileStorageProperties, SystemPropertyRepository systemPropertyRepository, MemberRepository memberRepository) {
         this.systemPropertyRepository = systemPropertyRepository;
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir()).toAbsolutePath().normalize();
+        this.memberRepository = memberRepository;
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
@@ -155,24 +161,86 @@ public class FileStorageService {
         return ResponseEntity.ok(bankRecordDtos);
     }
 
+    public ResponseEntity<Resource> genMemberConfirmDoc(Integer id, String newFileName, boolean download, boolean sendToMember, boolean sendToSystem, String issueDate) {
+        Optional<MemberEntity> byId = memberRepository.findById(id);
+        if (!byId.isPresent()) {
+            List<String> errors = new ArrayList<>();
+            errors.add("Membership Confirmation Report Generation Request Rejected. Member with id: " + id + " not available on system.");
+            return new ResponseEntity(errors, HttpStatus.NOT_FOUND);
+        }
+        MemberEntity m = byId.get();
+
+        Map<String, String> valueMap = new HashMap<>();
+        valueMap.put("PREFFERED_NAME", m.getPreferredName());
+        valueMap.put("UNIT_NO", m.getAddress().getUnitNo());
+        valueMap.put("STREET", m.getAddress().getStreet());
+        valueMap.put("TOWN", m.getAddress().getTown());
+        valueMap.put("COUNTRY", m.getAddress().getCountry());
+        valueMap.put("ISSUE_DATE", issueDate);
+        valueMap.put("FULL_NAME", m.getFullName());
+        valueMap.put("MEMBERSHIP_ID", m.getMembershipId());
+        valueMap.put("MEMBERSHIP_DATE", m.getMembershipDate().toString());
+        valueMap.put("ACC_NAME", systemPropertyRepository.getByCode(SystemPropertyService.ACCOUNT_NAME).get().getValue());
+        valueMap.put("ACC_NUMBER", systemPropertyRepository.getByCode(SystemPropertyService.ACCOUNT_NUMBER).get().getValue());
+        valueMap.put("BANK_NAME", systemPropertyRepository.getByCode(SystemPropertyService.BANK_NAME).get().getValue());
+        valueMap.put("BANK_BRANCH", systemPropertyRepository.getByCode(SystemPropertyService.BANK_BRANCH).get().getValue());
+
+        Resource resource;
+        Path targetLocation = this.fileStorageLocation.resolve(newFileName);
+        try {
+            WordprocessingMLPackage template = Doc4jProcess.generateDoc("AnnouncementTemp.docx", valueMap);
+            File outDoc = new File(targetLocation.toUri());
+            Docx4J.save(template, outDoc); //Save internally
+        } catch (Docx4JException e) {
+            logger.error("Membership Confirmation Report Generation Request Rejected. Error in doc file generation.", e);
+            e.printStackTrace();
+            List<String> errors = new ArrayList<>();
+            errors.add("Membership Confirmation Report Generation Request Rejected. Error in doc file generation.");
+            return new ResponseEntity(errors, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        try {
+            resource = new UrlResource(targetLocation.toUri());
+            if (resource == null || !resource.exists()) {
+                return getErrorResponse("Membership Confirmation Report Generation Request Rejected. File is not found in system: ", targetLocation.getFileName().toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, Files.probeContentType(targetLocation))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            return getErrorResponse("URL Malformed. File is not found in system: ", targetLocation.getFileName().toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public ResponseEntity<Resource> download(String filename) {
+        try {
+            Path file = fileStorageLocation.resolve(filename);
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() || resource.isReadable()) {
+                Path path = resource.getFile().toPath();
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, Files.probeContentType(path))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                throw new RuntimeException("Could not read the file!");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error: " + e.getMessage());
+        }
+
+    }
+
     private ResponseEntity getErrorResponse(String errorDescription, String originalFilename, HttpStatus internalServerError) {
         List<String> errors = new ArrayList<>();
         errors.add(errorDescription + (originalFilename != null ? "filename=" + originalFilename : ""));
         return new ResponseEntity(errors, internalServerError);
     }
-
-//    public ResponseEntity<UploadFileResponse> uploadFile(MultipartFile file) {
-//        ResponseEntity<UploadFileResponse> response = storeCsvFile(file);
-//        if (response.getStatusCode() != HttpStatus.OK) {
-//            return response; // error occurred
-//        }
-//
-//        response = extractData(file, response);
-//        if (response.getStatusCode() != HttpStatus.OK) {
-//            return response; // error occurred
-//        }
-//        return response;
-//    }
 
     private List<BankRecordDto> extractData(InputStream inputStream, String month, String year) {
         CsvToBean<BankRecordDto> csvToBean = new CsvToBeanBuilder<BankRecordDto>(new InputStreamReader(inputStream))

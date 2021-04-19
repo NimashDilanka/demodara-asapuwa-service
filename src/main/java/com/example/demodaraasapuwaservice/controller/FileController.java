@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
 
@@ -38,10 +37,27 @@ public class FileController {
         return fileStorageService.matchTransactions(transMatchDto.getRecords(), transMatchDto.getMembers());
     }
 
-    @ApiOperation(value = "Download a file", response = ResponseEntity.class)
-    @GetMapping("/files/download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
-        return fileStorageService.loadFileAsResource(fileName, request);
+//    @ApiOperation(value = "Download a file", response = ResponseEntity.class)
+//    @GetMapping("/files/download/{fileName:.+}")
+//    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
+//        return fileStorageService.loadFileAsResource(fileName, request);
+//    }
+
+    @ApiOperation(value = "Generate confirmation document for member", response = ResponseEntity.class)
+    @GetMapping("files/gen-doc/{id}")
+    public ResponseEntity<Resource> genMemberConfirmDoc(@PathVariable Integer id, @RequestParam(name = "download") boolean download,
+                                                        @RequestParam(name = "fileName") String fileName,
+                                                        @RequestParam(name = "sendToMember") boolean sendToMember,
+                                                        @RequestParam(name = "sendToSystem") boolean sendToSystem,
+                                                        @RequestParam(name = "issueDate") String issueDate) {
+        return fileStorageService.genMemberConfirmDoc(id, fileName, download, sendToMember, sendToSystem, issueDate);
+    }
+
+    @GetMapping("{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> downloadFile(@PathVariable String filename,
+                                                 @RequestParam(name = "download") boolean download) {
+        return fileStorageService.download(filename);
     }
 }
 
