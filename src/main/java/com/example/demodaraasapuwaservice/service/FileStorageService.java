@@ -161,7 +161,7 @@ public class FileStorageService {
         return ResponseEntity.ok(bankRecordDtos);
     }
 
-    public ResponseEntity<Resource> genMemberConfirmDoc(Integer id, String newFileName, boolean download, boolean sendToMember, boolean sendToSystem, String issueDate) {
+    public ResponseEntity<Resource> genMemberConfirmDoc(Integer id, String newFileName, String issueDate) {
         Optional<MemberEntity> byId = memberRepository.findById(id);
         if (!byId.isPresent()) {
             List<String> errors = new ArrayList<>();

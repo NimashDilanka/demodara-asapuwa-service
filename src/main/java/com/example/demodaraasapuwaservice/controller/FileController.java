@@ -45,12 +45,10 @@ public class FileController {
 
     @ApiOperation(value = "Generate confirmation document for member", response = ResponseEntity.class)
     @GetMapping("files/gen-doc/{id}")
-    public ResponseEntity<Resource> genMemberConfirmDoc(@PathVariable Integer id, @RequestParam(name = "download") boolean download,
+    public ResponseEntity<Resource> genMemberConfirmDoc(@PathVariable Integer id,
                                                         @RequestParam(name = "fileName") String fileName,
-                                                        @RequestParam(name = "sendToMember") boolean sendToMember,
-                                                        @RequestParam(name = "sendToSystem") boolean sendToSystem,
                                                         @RequestParam(name = "issueDate") String issueDate) {
-        return fileStorageService.genMemberConfirmDoc(id, fileName, download, sendToMember, sendToSystem, issueDate);
+        return fileStorageService.genMemberConfirmDoc(id, fileName, issueDate);
     }
 
     @GetMapping("{filename:.+}")
